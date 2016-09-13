@@ -1,3 +1,4 @@
 #!/bin/sh
+
 exec 2>&1
-exec python /restcommander-master/play-1.2.4/play run /restcommander-master/AgentMaster 
+exec python /restcommander/play-1.2.4/play start /restcommander/AgentMaster

@@ -1,35 +1,35 @@
-FROM ubuntu:14.04
- 
-ENV DEBIAN_FRONTEND noninteractive
+FROM ubuntu:16.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=en_US.UTF-8 \
+    TERM=xterm
+RUN locale-gen en_US en_US.UTF-8
+RUN echo "export PS1='\e[1;31m\]\u@\h:\w\\$\[\e[0m\] '" >> /root/.bashrc
 RUN apt-get update
 
-#Runit
-RUN apt-get install -y runit 
-CMD /usr/sbin/runsvdir-start
+# Runit
+RUN apt-get install -y --no-install-recommends runit
+CMD export > /etc/envvars && /usr/sbin/runsvdir-start
+RUN echo 'export > /etc/envvars' >> /root/.bashrc
 
-#SSHD
-RUN apt-get install -y openssh-server && \
-    mkdir -p /var/run/sshd && \
-    echo 'root:root' |chpasswd
-RUN sed -i "s/session.*required.*pam_loginuid.so/#session    required     pam_loginuid.so/" /etc/pam.d/sshd
-RUN sed -i "s/PermitRootLogin without-password/#PermitRootLogin without-password/" /etc/ssh/sshd_config
+# Utilities
+RUN apt-get install -y --no-install-recommends vim less net-tools inetutils-ping wget curl git telnet nmap socat dnsutils netcat tree htop unzip sudo software-properties-common jq psmisc iproute
 
-#Utilities
-RUN apt-get install -y vim less net-tools inetutils-ping curl git telnet nmap socat dnsutils netcat tree htop unzip sudo software-properties-common
-
-#Utilities
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y vim less net-tools inetutils-ping curl git telnet nmap socat dnsutils netcat tree htop unzip sudo
-
-#Install Oracle Java 7
-RUN apt-get install -y python-software-properties && \
-    add-apt-repository ppa:webupd8team/java -y && \
+#Install Oracle Java 8
+RUN add-apt-repository ppa:webupd8team/java -y && \
     apt-get update && \
-    echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
-    apt-get install -y oracle-java7-installer
+    echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
+    apt-get install -y oracle-java8-installer && \
+    apt install oracle-java8-unlimited-jce-policy && \
+    rm -r /var/cache/oracle-jdk8-installer
+ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
-RUN wget https://github.com/eBay/restsuperman/archive/master.zip && \
-    unzip master.zip && \
-    rm master.zip
+RUN apt-get install -y --no-install-recommends python
 
-#Add runit services
-ADD sv /etc/service 
+RUN wget -O - https://github.com/eBay/restcommander/archive/v2.0.1.tar.gz | tar zx
+RUN mv restcommander* restcommander
+
+# Add runit services
+COPY sv /etc/service 
+ARG BUILD_INFO
+LABEL BUILD_INFO=$BUILD_INFO
